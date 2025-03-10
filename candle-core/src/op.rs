@@ -348,7 +348,7 @@ bin_op!(
 
 #[allow(clippy::redundant_closure_call)]
 macro_rules! unary_op {
-    ($op: ident, $name: literal, $a: ident, $e: expr) => {
+    ($op: ident, $name: literal, $a: ident, $e: expr $(,$f32_vec:ident, $f64_vec:ident)*) => {
         impl UnaryOpT for $op {
             const NAME: &'static str = $name;
             const KERNEL: &'static str = concat!("u", $name);
@@ -381,72 +381,38 @@ macro_rules! unary_op {
             fn i64(_: i64) -> i64 {
                 todo!("no unary function for i64")
             }
-        }
-    };
+            
+            $(
+                #[cfg(feature = "mkl")]
+                const F32_VEC: bool = true;
+                #[cfg(feature = "mkl")]
+                const F64_VEC: bool = true;
+                #[cfg(feature = "mkl")]
+                #[inline(always)]
+                fn f32_vec(xs: &[f32], ys: &mut [f32]) {
+                    crate::mkl::$f32_vec(xs, ys)
+                }
+                #[cfg(feature = "mkl")]
+                #[inline(always)]
+                fn f64_vec(xs: &[f64], ys: &mut [f64]) {
+                    crate::mkl::$f64_vec(xs, ys)
+                }
 
-    ($op: ident, $name: literal, $a: ident, $e: expr, $f32_vec:ident, $f64_vec:ident) => {
-        impl UnaryOpT for $op {
-            const NAME: &'static str = $name;
-            const KERNEL: &'static str = concat!("u", $name);
-            const V: Self = $op;
-            #[inline(always)]
-            fn bf16($a: bf16) -> bf16 {
-                $e
-            }
-            #[inline(always)]
-            fn f16($a: f16) -> f16 {
-                $e
-            }
-            #[inline(always)]
-            fn f32($a: f32) -> f32 {
-                $e
-            }
-            #[inline(always)]
-            fn f64($a: f64) -> f64 {
-                $e
-            }
-            #[inline(always)]
-            fn u8(_: u8) -> u8 {
-                todo!("no unary function for u8")
-            }
-            #[inline(always)]
-            fn u32(_: u32) -> u32 {
-                todo!("no unary function for u32")
-            }
-            #[inline(always)]
-            fn i64(_: i64) -> i64 {
-                todo!("no unary function for i64")
-            }
-
-            #[cfg(feature = "mkl")]
-            const F32_VEC: bool = true;
-            #[cfg(feature = "mkl")]
-            const F64_VEC: bool = true;
-            #[cfg(feature = "mkl")]
-            #[inline(always)]
-            fn f32_vec(xs: &[f32], ys: &mut [f32]) {
-                crate::mkl::$f32_vec(xs, ys)
-            }
-            #[cfg(feature = "mkl")]
-            #[inline(always)]
-            fn f64_vec(xs: &[f64], ys: &mut [f64]) {
-                crate::mkl::$f64_vec(xs, ys)
-            }
-
-            #[cfg(feature = "accelerate")]
-            const F32_VEC: bool = true;
-            #[cfg(feature = "accelerate")]
-            const F64_VEC: bool = true;
-            #[cfg(feature = "accelerate")]
-            #[inline(always)]
-            fn f32_vec(xs: &[f32], ys: &mut [f32]) {
-                crate::accelerate::$f32_vec(xs, ys)
-            }
-            #[cfg(feature = "accelerate")]
-            #[inline(always)]
-            fn f64_vec(xs: &[f64], ys: &mut [f64]) {
-                crate::accelerate::$f64_vec(xs, ys)
-            }
+                #[cfg(feature = "accelerate")]
+                const F32_VEC: bool = true;
+                #[cfg(feature = "accelerate")]
+                const F64_VEC: bool = true;
+                #[cfg(feature = "accelerate")]
+                #[inline(always)]
+                fn f32_vec(xs: &[f32], ys: &mut [f32]) {
+                    crate::accelerate::$f32_vec(xs, ys)
+                }
+                #[cfg(feature = "accelerate")]
+                #[inline(always)]
+                fn f64_vec(xs: &[f64], ys: &mut [f64]) {
+                    crate::accelerate::$f64_vec(xs, ys)
+                }
+            )*
         }
     };
 }
@@ -507,7 +473,7 @@ impl UnaryOpT for Gelu {
     #[inline(always)]
     fn u8(_: u8) -> u8 {
         0
-    }
+    }    
     #[inline(always)]
     fn u32(_: u32) -> u32 {
         0
